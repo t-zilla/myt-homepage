@@ -23,7 +23,7 @@
 				{% for member in new_members %}
 					<li>
 						{% include 'homepage/includes/country_flag.html' with country=member.country %}
-						&nbsp;&nbsp;<a href="{% url 'homepage:member' member.pk %}">|MYT|{{member.username}}{{member.rank.suffix}}</a>
+						<a href="{% url 'homepage:member' member.pk %}">{{member.full_member_name}}</a>
 					</li>
 				{% endfor %}
 				</ul>	

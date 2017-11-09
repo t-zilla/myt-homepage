@@ -28,7 +28,7 @@
 						{% for member in members %}
 						<tr>
 							<td>{% include 'homepage/includes/country_flag.html' with country=member.country %}</td>
-							<td><a href="{% url 'homepage:member' member.pk %}">|MYT|{{member.username}}</a></td>
+							<td><a href="{% url 'homepage:member' member.pk %}">{{member.member_name}}</a></td>
 							<td>{{member.rank.name}}</td>
 							<td>{{member.date_joined|timesince}}</td>
 						</tr>

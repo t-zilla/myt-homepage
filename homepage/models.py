@@ -1,5 +1,7 @@
 import datetime
 from PIL import Image
+import re
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
@@ -17,8 +19,8 @@ class PlayerManager(models.Manager):
 	def ex_members(self):
 		return self.get_queryset().filter(is_member=False, date_left__isnull=False)
 		
-	def new_members(self):
-		return self.members().filter(date_joined__gte=timezone.now()-datetime.timedelta(days=30))
+	def new_members(self, period=30):
+		return self.members().filter(date_joined__gte=timezone.now()-datetime.timedelta(days=period))
 	
 	
 class Player(models.Model):
@@ -49,21 +51,52 @@ class Player(models.Model):
 	def username(self):
 		return self.user.username
 		
+	def member_name(self):
+		if not self.is_member:
+			return self.user.username
+		else:
+			return "|MYT|" + self.user.username
+	
+	def full_member_name(self):
+		if not self.is_member or not self.rank:
+			return self.user.username
+		elif self.rank.suffix:
+			return "|MYT|" + self.user.username + self.rank.suffix
+		else:
+			return "|MYT|" + self.user.username
+		
 	def email(self):
 		return self.user.email
+		
+	def age(self):
+		today = datetime.date.today()
+		if self.birthday:
+			return today.year - self.birthday.year - ((today.month, today.day) < (self.birthday.month, self.birthday.day))
+		return None
 	
 	def __str__(self):
-		return self.user.username
+		return self.full_member_name()
 		
 	def clean(self):
-		'''
-		
-			TODO: Add model validation
-			
-		'''
-		pass
+		if self.is_member:
+			if not self.rank:
+				raise ValidationError("Clan member must have a rank.")
+			if self.date_left:
+				raise ValidationError("Clan member cannot have a date of leave.")
+		else:
+			if self.rank:
+				raise ValidationError("Only clan members can have ranks.")
+		if self.date_left:
+			if self.date_joined > self.date_left:
+				raise ValidationError("Date of leave must be later than join date.")
+		if self.birthday and self.age() < 0:
+			raise ValidationError("Age must be greater than 0.")
+		if self.discord_profile and not re.match(r'.+#\d+', str(self.discord_profile)):
+			raise ValidationError("Discord profile must follow the format: Example#1234")
+		if self.steam_profile and not re.match(r'https://steamcommunity.com/.*', str(self.steam_profile)):
+			raise ValidationError("Steam profile must be the full URL starting with: https://steamcommunity.com/")
 
-		
+
 class RankManager(models.Manager):
 	def get_queryset(self, *args, **kwargs):
 		return super(RankManager, self).get_queryset().order_by("-value", "name")
@@ -80,12 +113,8 @@ class Rank(models.Model):
 		return self.name
 		
 	def clean(self):
-		'''
-		
-			TODO: Add model validation
-			
-		'''
-		pass
+		if self.suffix and not re.match(r'>.+<', self.suffix):
+			raise ValidationError("Suffix must follow the format: >Example<")
 
 
 class GameManager(models.Manager):
@@ -106,19 +135,12 @@ class Game(models.Model):
 	def __str__(self):
 		return self.title
 		
-	def resize_icon(self):
-		image = Image.open(icon.path)
-		image = image.resize((64, 64))
-		image.save(icon.path)
-		
 	@staticmethod
 	def post_save(sender, instance, *args, **kwargs):
-		'''
-		
-			TODO: Validate and resize icon
-		
-		'''
-		pass
+		image = Image.open(flag.path)
+		if image.width != 64 or image.height != 64:
+			image = image.resize((22, 16))
+			image.save(flag.path)
 		
 
 post_save.connect(Game.post_save, Game)
@@ -139,7 +161,7 @@ class Server(models.Model):
 	name = models.CharField(max_length=50)
 	ip = models.GenericIPAddressField("IP address")
 	game_port = models.PositiveIntegerField()
-	is_active = models.BooleanField(default=True, help_text="Inactive servers aren't display on the page")
+	is_active = models.BooleanField(default=True, help_text="Inactive servers aren't displayed")
 	is_public = models.BooleanField(default=True)
 	game = models.ForeignKey("homepage.Game", on_delete=models.PROTECT)
 	value = models.IntegerField(default=0, help_text="Used for sorting; greater value -> higher on the list")
@@ -157,12 +179,13 @@ class Server(models.Model):
 		return self.name + " @ " + self.ip + ":" + str(self.game_port)
 		
 	def clean(self):
+		if not 1 <= self.game_port <= 65535:
+			raise ValidationError("Port must be between 1 and 65535.")
 		'''
 		
-			TODO: Add model validation
+			TODO: Validate query settings
 			
 		'''
-		pass
 		
 
 class NewsManager(models.Manager):
@@ -172,7 +195,8 @@ class NewsManager(models.Manager):
 	def public(self):
 		return self.get_queryset().filter(is_draft=False)
 		
-	#TODO: latest news
+	def latest(self, count=5):
+		return self.public()[:count]
 
 		
 class News(models.Model):
@@ -186,7 +210,7 @@ class News(models.Model):
 	objects = NewsManager()
 	
 	def __str__(self):
-		return self.title
+		return self.title if not self.is_draft else "[Draft] " + self.title
 		
 	class Meta:
 		verbose_name_plural = "news"
@@ -202,7 +226,7 @@ class Setting(models.Model):
 	
 	'''
 		Fetches value for the specified key
-		Returns default if key is either empty or doesn't exist
+		Returns default if either key doesn't exist or has empty value
 	'''
 	@staticmethod
 	def fetch_setting(key, default=""):
@@ -223,19 +247,12 @@ class Country(models.Model):
 	def __str__(self):
 		return self.name
 		
-	def resize_image(self):
-		image = Image.open(flag.path)
-		image = image.resize((22, 16))
-		image.save(flag.path)
-		
 	@staticmethod
 	def post_save(sender, instance, *args, **kwargs):
-		'''
-		
-			TODO: Validate and resize flag
-		
-		'''
-		pass
+		image = Image.open(flag.path)
+		if image.width != 22 or image.height != 16:
+			image = image.resize((22, 16))
+			image.save(flag.path)
 		
 	class Meta:
 		verbose_name_plural = "countries"

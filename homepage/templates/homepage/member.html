@@ -13,9 +13,17 @@
 		<div class="col-md-9">
 			<section>
 				<h2>
-					{% if player.is_member %}|MYT|{% endif %}{{player.username}}{{player.rank.suffix}}
+					{{player.full_member_name}}
 				</h2>
-				<h4>{{player.rank.name}}</h4>
+				{% if player.is_member %}
+				<h4>
+					{{player.rank.name}}
+				</h4>
+				{% elif player.date_left %}
+				<h4>
+					Ex-member
+				</h4>
+				{% endif %}	
 				
 				<table class="table table-striped">
 					<thead>
@@ -27,8 +35,14 @@
 					<tbody>
 						<tr>
 							<td>Join date</td>
-							<td>{{player.date_joined}}</td>
+							<td>{{player.date_joined}} ({{player.date_joined|timesince}} ago)</td>
 						</tr>
+						{% if player.date_left %}
+						<tr>
+							<td>Date of leave</td>
+							<td>{{player.date_left}} ({{player.date_left|timesince}} ago)</td>
+						</tr>
+						{% endif %}
 						<tr>
 							<td>Games</td>
 							<td>
@@ -37,7 +51,7 @@
 									{% include 'homepage/includes/game_icon.html' with game=game %} {{game.title}}
 								</div>
 								{% empty %}
-								None
+								-
 								{% endfor %}
 							</td>
 						</tr>
@@ -58,7 +72,7 @@
 						</tr>
 						<tr>
 							<td>Age</td>
-							<td>{{player.birthday|timesince|default:"-"}}</td>
+							<td>{{player.age|default:"-"}}</td>
 						</tr>
 						<tr>
 							<td>Gender</td>

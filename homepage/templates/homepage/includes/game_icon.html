@@ -1,1 +1,1 @@
-{% load static %}{% if game %}<img src="{% if game.icon %}{{game.icon.url}}{% else %}{% static 'img/unknown_game.gif' %}{% endif %}" alt="{{game.title}}" class="{{img_class|default:'small-game-icon'}}">{% endif %}
+{% load static %}{% if game %}<img src="{% if game.icon %}{{game.icon.url}}{% else %}{% static 'img/unknown_game.gif' %}{% endif %}" alt="" class="{{img_class|default:'small-game-icon'}}">{% endif %}
