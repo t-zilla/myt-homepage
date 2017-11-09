@@ -1,0 +1,17 @@
+{% extends "homepage/base.html" %}
+{% load static %}
+
+{% block title %}{{page_title}}{% endblock %}
+
+{% block content %}
+
+	<div class="row">
+		<div class="col-md-3">
+			{% include 'homepage/includes/sidebar.html' %}
+		</div>
+		
+		<div class="col-md-9">
+			{{page_content|safe}}
+		</div>
+	</div>
+{% endblock %}

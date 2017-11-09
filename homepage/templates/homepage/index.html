@@ -4,5 +4,104 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-	<p>Hello World</p>
+	<div class="jumbotron">
+		<h1>{{jumbo_header|default:"[jumbo_header]"|safe}}</h1>
+		<p>{{jumbo_subheader|default:"[jumbo_subheader]"|safe}}</p>
+	</div>
+				
+	<div class="row">
+		<div class="col-md-4">
+			<section>
+				<h3>Greetings</h3>
+				{{greeting|default:"[greeting]"|safe}}
+			</section>
+			
+			{% if new_members %}
+			<section>
+				<h3>New members</h3>	
+				<ul style="list-style-type: none;">
+				{% for member in new_members %}
+					<li>
+						{% include 'homepage/includes/country_flag.html' with country=member.country %}
+						&nbsp;&nbsp;<a href="{% url 'homepage:member' member.pk %}">|MYT|{{member.username}}{{member.rank.suffix}}</a>
+					</li>
+				{% endfor %}
+				</ul>	
+			</section>
+			{% endif %}
+			
+			<section>
+				<h3>Links</h3>
+				{{links|default:"[links]"|safe}}
+			</section>
+		</div>
+		
+		<div class="col-md-8">		
+			<section>
+				<h2>Our servers</h2>
+				{% if featured_servers %}
+				<div class="row">
+					{% for server in featured_servers %}
+					<div class="col-sm-4">
+						<h4><a href="{% url 'homepage:server' server.pk %}">{{server.name}}</a></h4>
+						<ul>
+							<li>
+								{% include 'homepage/includes/game_icon.html' with game=server.game %} {{server.game.title}}
+							</li>
+							<li>{{server.ip}}:{{server.game_port}}</li>
+							<li>{{server.gamemode}}</li>
+						</ul>
+					</div>
+					{% endfor %}
+				</div>
+				<div style="text-align: right">
+					<a href="{% url 'homepage:servers'%}" class="btn btn-default">See more</a>
+				</div>
+				{% else %}
+				<p>There are no servers available.</p>
+				{% endif %}
+			</section>
+			
+			<section>
+				<h2>News</h2>
+				{% for news in latest_news %}
+				<article>
+					<header>
+						<h3>
+							<a href="{% url 'homepage:news' news.pk %}">{{news.title}}</a>
+						</h3>
+					</header>
+					{{news.body|safe}}
+					<footer>
+						<p class="text-muted small">
+							Posted {{news.date_written|timesince}} ago
+						</p>
+					</footer>
+				</article>
+				<hr>
+				{% empty %}
+				<p>There are no news to display.</p>
+				{% endfor %}
+			</section>
+			
+			<div class="row">			
+				<div class="col-sm-6">
+					{% if social_media %}
+					<section>
+						<h2>Social media</h2>
+						{{social_media|safe}}
+					</section>
+					{% endif %}
+				</div>
+				<div class="col-sm-6">
+					{% if support %}
+					<section>
+						<h2>Support us</h2>
+						{{support|safe}}
+					</section>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
 {% endblock %}

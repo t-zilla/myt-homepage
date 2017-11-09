@@ -9,6 +9,7 @@ urlpatterns = [
 	url(r'^servers/$', views.servers, name="servers"),
 	url(r'^servers/(?P<pk>\d+)$', views.server, name="server"),
 	url(r'^news/(?P<pk>\d+)$', views.news, name="news"),
+	url(r'^rules/$', views.flat_page, {"page_key": "rules", "page_title": "Clan rules"}, name="rules"),
 	url(r'^forum/$', views.redirect, {"destination": "forum_address"}, name="forum"),
 	url(r'^discord/$', views.redirect, {"destination": "discord_address"}, name="discord"),
 ]

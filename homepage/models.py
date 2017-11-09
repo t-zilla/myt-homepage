@@ -1,9 +1,10 @@
+import datetime
+from PIL import Image
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
 from django.utils import timezone
 from myt_homepage import settings
-from myt_homepage.utils import resize_image
 
 
 class PlayerManager(models.Manager):
@@ -15,10 +16,12 @@ class PlayerManager(models.Manager):
 		
 	def ex_members(self):
 		return self.get_queryset().filter(is_member=False, date_left__isnull=False)
+		
+	def new_members(self):
+		return self.members().filter(date_joined__gte=timezone.now()-datetime.timedelta(days=30))
 	
 	
 class Player(models.Model):
-	# Constants
 	MALE = 1
 	FEMALE = 2
 	GENDER_CHOICES = (
@@ -39,15 +42,15 @@ class Player(models.Model):
 	discord_profile = models.CharField(max_length=20, null=True, blank=True, help_text="Discord name and discriminator in format: Example#1234")
 	steam_profile = models.CharField(max_length=150, null=True, blank=True, help_text="Full URL to steam profile")
 	forum_profile = models.PositiveIntegerField(null=True, blank=True, help_text="User ID on phpBB forum")
-	db_profile = models.PositiveIntegerField("DB profile", null=True, blank=True, help_text="Profile ID on players db")
+	db_profile = models.PositiveIntegerField("DB profile", null=True, blank=True, help_text="Profile ID in players database")
 	
 	objects = PlayerManager()
 	
 	def username(self):
-		return user.username
+		return self.user.username
 		
 	def email(self):
-		return user.email
+		return self.user.email
 	
 	def __str__(self):
 		return self.user.username
@@ -68,8 +71,8 @@ class RankManager(models.Manager):
 
 class Rank(models.Model):
 	name = models.CharField(max_length=30)
-	suffix = models.CharField(max_length=6, null=True, blank=True, help_text="Suffix added to member's name, for example: >SrM<")
-	value = models.IntegerField(help_text="Used for sorting; greater value => more significant rank")
+	suffix = models.CharField(max_length=10, null=True, blank=True, help_text="Suffix added to member's name, for example: >SrM<")
+	value = models.IntegerField(help_text="Used for sorting; greater value -> rank displayed higher")
 	
 	objects = RankManager()
 	
@@ -103,6 +106,11 @@ class Game(models.Model):
 	def __str__(self):
 		return self.title
 		
+	def resize_icon(self):
+		image = Image.open(icon.path)
+		image = image.resize((64, 64))
+		image.save(icon.path)
+		
 	@staticmethod
 	def post_save(sender, instance, *args, **kwargs):
 		'''
@@ -118,24 +126,24 @@ post_save.connect(Game.post_save, Game)
 
 class ServerManager(models.Manager):
 	def get_queryset(self, *args, **kwargs):
-		return super(ServerManger, self).get_queryset().order_by("-value", "game", "name")
+		return super(ServerManager, self).get_queryset().order_by("-value", "game", "name")
 		
 	def active(self):
 		return self.get_queryset().filter(is_active=True)
 		
 	def featured(self):
-		return self.active.order_by("-is_featured", "-value", "game", "name")
+		return self.active().order_by("-is_featured", "-value", "game", "name")
 	
 	
 class Server(models.Model):
-	name = models.CharField(max_length=40)
-	ip = models.GenericIPAddressField()
+	name = models.CharField(max_length=50)
+	ip = models.GenericIPAddressField("IP address")
 	game_port = models.PositiveIntegerField()
 	is_active = models.BooleanField(default=True, help_text="Inactive servers aren't display on the page")
 	is_public = models.BooleanField(default=True)
 	game = models.ForeignKey("homepage.Game", on_delete=models.PROTECT)
-	value = models.IntegerField(default=0, help_text="Used for sorting; greater value => higher on the list")
-	is_featured = models.BooleanField("feature on front page", default=False, help_text="If there are too many or too few featured servers, value will be the deciding factor")
+	value = models.IntegerField(default=0, help_text="Used for sorting; greater value -> higher on the list")
+	is_featured = models.BooleanField("feature on front page", default=False, help_text="If there are too many or too few servers marked as featured, 'value' will be the deciding factor")
 	gamemode = models.CharField(max_length=20, help_text="Dominant gamemode or a brief description of the server")
 	query_enabled = models.BooleanField("show server status", default=False)
 	query_type = models.CharField(max_length=100, null=True, blank=True)
@@ -146,7 +154,7 @@ class Server(models.Model):
 	objects = ServerManager()
 	
 	def __str__(self):
-		return self.name + " @ " + self.ip + ":" + self.game_port
+		return self.name + " @ " + self.ip + ":" + str(self.game_port)
 		
 	def clean(self):
 		'''
@@ -161,46 +169,51 @@ class NewsManager(models.Manager):
 	def get_queryset(self, *args, **kwargs):
 		return super(NewsManager, self).get_queryset().order_by("-is_sticky", "-date_written")
 		
-	def public():
+	def public(self):
 		return self.get_queryset().filter(is_draft=False)
+		
+	#TODO: latest news
 
 		
 class News(models.Model):
 	title = models.CharField(max_length=150)
 	body = models.TextField()
-	author = models.ForeignKey(User, on_delete=models.PROTECT, related_name="news_written")
-	date_written = models.DateTimeField()
-	edited_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="news_edited")
-	date_edited = models.DateTimeField()
-	is_sticky = models.BooleanField(default=False, help_text="Always display at the top")
-	is_draft = models.BooleanField("save as draft", default=True)
+	date_written = models.DateTimeField(auto_now_add=True)
+	date_modified = models.DateTimeField(auto_now=True)
+	is_sticky = models.BooleanField("pin at the top", default=False)
+	is_draft = models.BooleanField("save as draft", default=False)
 	
 	objects = NewsManager()
 	
 	def __str__(self):
-		return self.title + " by " + self.author.username
-
-	@staticmethod
-	def post_save(sender, instance, *args, **kwargs):
-		'''
-		
-			TODO: Populate author, date_written, edited_by and date_edited
-		
-		'''
-		pass
+		return self.title
 		
 	class Meta:
 		verbose_name_plural = "news"
 
-post_save.connect(News.post_save, News)
-		
 		
 class Setting(models.Model):
 	key = models.CharField(primary_key=True, max_length=50)
-	value = models.TextField()
+	value = models.TextField(blank=True)
 	
 	def __str__(self):
 		return self.key
+	
+	
+	'''
+		Fetches value for the specified key
+		Returns default if key is either empty or doesn't exist
+	'''
+	@staticmethod
+	def fetch_setting(key, default=""):
+		try:
+			setting = Setting.objects.get(key=key)
+		except Setting.DoesNotExist:
+			return default
+		if setting.value:
+			return setting.value
+		else:
+			return default
 		
 
 class Country(models.Model):
@@ -209,6 +222,11 @@ class Country(models.Model):
 	
 	def __str__(self):
 		return self.name
+		
+	def resize_image(self):
+		image = Image.open(flag.path)
+		image = image.resize((22, 16))
+		image.save(flag.path)
 		
 	@staticmethod
 	def post_save(sender, instance, *args, **kwargs):

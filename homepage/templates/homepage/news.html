@@ -1,0 +1,29 @@
+{% extends "homepage/base.html" %}
+{% load static %}
+
+{% block title %}News{% endblock %}
+
+{% block content %}
+
+	<div class="row">
+		<div class="col-md-3">
+			{% include 'homepage/includes/sidebar.html' %}
+		</div>
+		
+		<div class="col-md-9">
+			<article>
+				<header>
+					<h3>
+						<a href="{% url 'homepage:news' news.pk %}">{{news.title}}</a>
+					</h3>
+				</header>
+				{{news.body|safe}}
+				<footer>
+					<p class="text-muted small">
+						Posted on {{news.date_written}}
+					</p>
+				</footer>
+			</article>
+		</div>
+	</div>
+{% endblock %}

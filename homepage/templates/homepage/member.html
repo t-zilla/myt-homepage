@@ -1,0 +1,120 @@
+{% extends "homepage/base.html" %}
+{% load static %}
+
+{% block title %}{{player.username}} - Profile{% endblock %}
+
+{% block content %}
+
+	<div class="row">
+		<div class="col-md-3">
+			{% include 'homepage/includes/sidebar.html' %}
+		</div>
+		
+		<div class="col-md-9">
+			<section>
+				<h2>
+					{% if player.is_member %}|MYT|{% endif %}{{player.username}}{{player.rank.suffix}}
+				</h2>
+				<h4>{{player.rank.name}}</h4>
+				
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th style="width: 25%;">Team</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Join date</td>
+							<td>{{player.date_joined}}</td>
+						</tr>
+						<tr>
+							<td>Games</td>
+							<td>
+								{% for game in player.games.all %}
+								<div>
+									{% include 'homepage/includes/game_icon.html' with game=game %} {{game.title}}
+								</div>
+								{% empty %}
+								None
+								{% endfor %}
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th style="width: 25%;">Personal</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>First name</td>
+							<td>{{player.first_name|default:"-"}}</td>
+						</tr>
+						<tr>
+							<td>Age</td>
+							<td>{{player.birthday|timesince|default:"-"}}</td>
+						</tr>
+						<tr>
+							<td>Gender</td>
+							<td>{{player.get_gender_display|default:"-"}}</td>
+						</tr>
+						<tr>
+							<td>Country</td>
+							<td>
+								{% include 'homepage/includes/country_flag.html' with country=player.country %}
+								{{player.country|default:"-"}}
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th style="width: 25%;">Profiles</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Discord</td>
+							<td>{{player.discord_profile|default:"-"}}</td>
+						</tr>
+						<tr>
+							<td>Steam</td>
+							<td>
+							{% if player.steam_profile %}
+								<a href="{{player.steam_profile}}" target="_blank">Visit</a>
+							{% else %} 
+								-
+							{% endif %}
+							</td>
+						</tr>
+						<tr>
+							<td>MYT Forum</td>
+							<td>
+							{% if player.forum_profile %}
+								<a href="http://forum.mytteam.com/memberlist.php?mode=viewprofile&u={{player.forum_profile}}" target="_blank">Visit</a>
+							{% else %} 
+								-
+							{% endif %}
+							</td>
+						</tr>
+						{% if request.user.is_authenticated %}
+						<tr>
+							<td>Database ID</td>
+							<td>{{player.database_profile|default:"-"}}</td>
+						</tr>
+						{% endif %}
+					</tbody>
+				</table>
+			</section>
+		</div>
+	</div>
+{% endblock %}

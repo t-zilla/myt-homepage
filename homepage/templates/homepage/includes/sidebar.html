@@ -1,1 +1,30 @@
-<p>Here be sidebar</p>
+{% if latest_news %}
+<section>
+	<h3>News</h3>
+	<ul>
+	{% for l_news in latest_news %}
+		<li><a href="{% url 'homepage:news' l_news.pk %}">{{ l_news.title|truncatechars:30 }}</a></li>	
+	{% endfor %}
+	</ul>
+</section>
+{% endif %}
+
+{% if new_members %}
+<section>
+	<h3>New members</h3>	
+	<ul style="list-style-type: none;">
+	{% for member in new_members %}
+		<li>
+			{% include 'homepage/includes/country_flag.html' with country=member.country %} <a href="{% url 'homepage:member' member.pk %}">|MYT|{{member.username}}{{member.rank.suffix}}</a>
+		</li>
+	{% endfor %}
+	</ul>	
+</section>
+{% endif %}
+
+{% if links %}
+<section>
+	<h3>Links</h3>
+	{{ links|safe }}
+</section>
+{% endif %}

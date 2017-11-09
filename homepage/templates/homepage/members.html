@@ -1,0 +1,44 @@
+{% extends "homepage/base.html" %}
+{% load static %}
+
+{% block title %}Members{% endblock %}
+
+{% block content %}
+
+	<div class="row">
+		<div class="col-md-3">
+			{% include 'homepage/includes/sidebar.html' %}
+		</div>
+		
+		<div class="col-md-9">
+			<section>
+				<h2>Members</h2>
+				{% if members %}
+				<p>Total count: {{members|length}}</p>
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th style="width: 48px;"></th>
+							<th>Name</th>
+							<th>Rank</th>
+							<th>Member for</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for member in members %}
+						<tr>
+							<td>{% include 'homepage/includes/country_flag.html' with country=member.country %}</td>
+							<td><a href="{% url 'homepage:member' member.pk %}">|MYT|{{member.username}}</a></td>
+							<td>{{member.rank.name}}</td>
+							<td>{{member.date_joined|timesince}}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				{% else %}
+				<p>There are no members.</p>
+				{% endif %}
+			</section>
+		</div>
+	</div>
+{% endblock %}

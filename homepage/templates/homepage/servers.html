@@ -1,0 +1,181 @@
+{% extends "homepage/base.html" %}
+{% load static %}
+
+{% block title %}Servers{% endblock %}
+
+{% block content %}
+
+	<div class="row">
+		<div class="col-md-3">
+			{% include 'homepage/includes/sidebar.html' %}
+		</div>
+		
+		<div class="col-md-9">
+			<section>
+				<h2>Servers</h2>
+				{% if servers %}
+				<p>Total count: {{servers|length}}</p>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Game</th>
+							<th>Server name</th>
+							<th>Address</th>
+							<th>Gamemode</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for server in servers %}
+						<tr{% if server == viewed_server %} class="active"{% endif %}>
+							<td>
+								{% include 'homepage/includes/game_icon.html' with game=server.game %} {{server.game.title}}
+							</td>
+							<td><a href="{% url 'homepage:server' server.pk %}">{{server.name}}</a></td>
+							<td>{{server.ip}}:{{server.game_port}}</td>
+							<td>{{server.gamemode}}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				{% else %}
+				<p>There are no servers available.</p>
+				{% endif %}
+			</section>
+
+			{% if viewed_server %}
+			<section>
+				<h4 style="text-align: center; font-weight: bold;">{{viewed_server.name}}</h4>
+				<table class="table table-condensed">
+					<tbody>
+						<tr>
+							<td>IP Address</td>
+							<td>{{viewed_server.ip}}:{{viewed_server.game_port}}</td>
+						</tr>
+						<tr>
+							<td>Game</td>
+							<td>{% include 'homepage/includes/game_icon.html' with game=viewed_server.game %} {{viewed_server.game.title}}</td>
+						</tr>
+					</tbody>
+				</table>
+				
+				{% if viewed_server.query_enabled %}
+				<div class="alert alert-danger">
+					Not actual data
+				</div>
+				
+				<table class="table table-condensed">
+					<tbody>
+						<tr>
+							<td>Gamemode</td>
+							<td>VIP Escort</td>
+						</tr>
+						<tr>
+							<td>Map</td>
+							<td>Red Library Offices</td>
+						</tr>
+						<tr>
+							<td>Players</td>
+							<td>16/16</td>
+						</tr>
+						<tr>
+							<td>Rounds</td>
+							<td>1/5</td>
+						</tr>
+					</tbody>
+				</table>
+
+				<div class="row">
+					<div class="col-sm-6">
+						<div style="text-align: center;">
+							<h4>SWAT</h4>
+							<p>
+								Score: <strong>11</strong>&nbsp;&nbsp;&nbsp;&nbsp;Rounds won: <strong>0</strong>
+							</p>
+						</div>
+						<table class="table table-condensed">
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>Score</th>
+									<th>Ping</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Aenean</td>
+									<td>8</td>
+									<td>47</td>
+								</tr>
+								<tr>
+									<td>Accumsan</td>
+									<td>7</td>
+									<td>81</td>
+								</tr>
+								<tr>
+									<td>Enim</td>
+									<td>4</td>
+									<td>117</td>
+								</tr>
+								<tr>
+									<td>Eget</td>
+									<td>2</td>
+									<td>32</td>
+								</tr>
+								<tr>
+									<td>Luctus</td>
+									<td>0</td>
+									<td>65</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="col-sm-6">
+						<div style="text-align: center;">
+							<h4>Suspects</h4>
+							<p>
+								Score: <strong>24</strong>&nbsp;&nbsp;&nbsp;&nbsp;Rounds won: <strong>0</strong>
+							</p>
+						</div>
+						<table class="table table-condensed">
+							<thead>
+								<tr>
+									<th>Name</th>
+									<th>Score</th>
+									<th>Ping</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Efficitur</td>
+									<td>12</td>
+									<td>92</td>
+								</tr>
+								<tr>
+									<td>Tincidunt</td>
+									<td>6</td>
+									<td>65</td>
+								</tr>
+								<tr>
+									<td>Turpis</td>
+									<td>6</td>
+									<td>72</td>
+								</tr>
+								<tr>
+									<td>Feugiat</td>
+									<td>1</td>
+									<td>147</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				
+				<p style="text-align: center;">
+					<a href="#" class="btn btn-default">Refresh</a>
+				</p>	
+				{% endif %}
+			</section>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}
