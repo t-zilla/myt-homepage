@@ -39,6 +39,9 @@
 						<li class="{% if '/servers' in request.path %}active{% endif %}"><a href="{% url 'homepage:servers' %}">Servers</a></li>
 						<li><a href="{% url 'homepage:discord' %}" target="_blank">Discord</a></li>
 					</ul>
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="{% url 'admin:index' %}" target="_blank">Login</a></li>
+					</ul>
 				</div>
 			</nav>
 		</header>

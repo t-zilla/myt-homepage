@@ -1,6 +1,7 @@
 import datetime
 from PIL import Image
 import re
+import os
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.db import models
@@ -218,6 +219,8 @@ class News(models.Model):
 		
 class Setting(models.Model):
 	key = models.CharField(primary_key=True, max_length=50)
+	verbose_key = models.CharField("setting", max_length=50, blank=True, null=True)
+	hints = models.TextField(blank=True, null=True)
 	value = models.TextField(blank=True)
 	
 	def __str__(self):
@@ -242,20 +245,13 @@ class Setting(models.Model):
 
 class Country(models.Model):
 	name = models.CharField(max_length=20)
-	flag = models.ImageField(upload_to="flags/", blank=True, null=True, help_text="Allowed types: jpg/png/gif, recommended dimensions: 22x16 pixels", max_length=300)
+	flag = models.FilePathField(path=settings.MEDIA_ROOT+"flags/", allow_files=True, blank=True, null=True)
+	
+	def flag_url(self):
+		return settings.MEDIA_URL+"flags/"+os.path.basename(self.flag)
 	
 	def __str__(self):
 		return self.name
 		
-	@staticmethod
-	def post_save(sender, instance, *args, **kwargs):
-		image = Image.open(flag.path)
-		if image.width != 22 or image.height != 16:
-			image = image.resize((22, 16))
-			image.save(flag.path)
-		
 	class Meta:
 		verbose_name_plural = "countries"
-
-		
-post_save.connect(Country.post_save, Country)
