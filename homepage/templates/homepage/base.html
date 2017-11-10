@@ -40,7 +40,7 @@
 						<li><a href="{% url 'homepage:discord' %}" target="_blank">Discord</a></li>
 					</ul>
 					<ul class="nav navbar-nav navbar-right">
-						<li><a href="{% url 'admin:index' %}" target="_blank">Login</a></li>
+						<li><a href="{% url 'admin:index' %}" target="_blank">{% if user.is_authenticated %}Admin panel{% else %}Login{% endif %}</a></li>
 					</ul>
 				</div>
 			</nav>
@@ -58,7 +58,7 @@
 			<div class="container">
 				<div class="row" style="margin-top: 25px; margin-bottom: 35px;">
 					<div class="col-md-8">
-						{{footer}}
+						{{footer|safe}}
 					</div>
 					<div class="col-md-4" style="text-align: right;">
 						<a href="{% url 'homepage:index' %}"><img src="{% static 'img/logo.png' %}" alt="MYT" class="footer-logo"></a>

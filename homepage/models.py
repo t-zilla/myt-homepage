@@ -1,5 +1,4 @@
 import datetime
-from PIL import Image
 import re
 import os
 from django.core.exceptions import ValidationError
@@ -37,7 +36,7 @@ class Player(models.Model):
 	games = models.ManyToManyField("homepage.Game", related_name="players")
 	country = models.ForeignKey("homepage.Country", on_delete=models.SET_NULL, null=True, blank=True)
 	is_member = models.BooleanField(default=True)
-	date_joined = models.DateField("joined the clan on", auto_now_add=True)
+	date_joined = models.DateField("joined the clan on")
 	date_left = models.DateField("left the clan on", null=True, blank=True, help_text="Leave blank if currently is a member")
 	first_name = models.CharField(max_length=20, null=True, blank=True)
 	birthday = models.DateField(null=True, blank=True)
@@ -87,7 +86,7 @@ class Player(models.Model):
 		else:
 			if self.rank:
 				raise ValidationError("Only clan members can have ranks.")
-		if self.date_left:
+		if self.date_left and self.date_joined:
 			if self.date_joined > self.date_left:
 				raise ValidationError("Date of leave must be later than join date.")
 		if self.birthday and self.age() < 0:
@@ -128,23 +127,18 @@ class GameManager(models.Manager):
 		
 class Game(models.Model):
 	title = models.CharField(max_length=20, help_text="Game title including its version")
-	icon = models.ImageField(upload_to="game_icons/", blank=True, null=True, help_text="Allowed types: jpg/png/gif, recommended dimensions: 64x64 pixels", max_length=300)
-	is_supported = models.BooleanField(default=True, help_text="Is this game supported by the clan")
+	icon = models.FilePathField(path=settings.MEDIA_ROOT+"game_icons/", allow_files=True, blank=True, null=True)
+	is_supported = models.BooleanField(default=True, help_text="Is this game currently supported")
 	
 	objects = GameManager()
 	
+	def icon_url(self):
+		if self.icon:
+			return settings.MEDIA_URL+"game_icons/"+os.path.basename(self.icon)
+		return ""
+	
 	def __str__(self):
 		return self.title
-		
-	@staticmethod
-	def post_save(sender, instance, *args, **kwargs):
-		image = Image.open(flag.path)
-		if image.width != 64 or image.height != 64:
-			image = image.resize((22, 16))
-			image.save(flag.path)
-		
-
-post_save.connect(Game.post_save, Game)
 		
 
 class ServerManager(models.Manager):
@@ -163,7 +157,7 @@ class Server(models.Model):
 	ip = models.GenericIPAddressField("IP address")
 	game_port = models.PositiveIntegerField()
 	is_active = models.BooleanField(default=True, help_text="Inactive servers aren't displayed")
-	is_public = models.BooleanField(default=True)
+	is_public = models.BooleanField(default=True, help_text="Is the server public or passworded")
 	game = models.ForeignKey("homepage.Game", on_delete=models.PROTECT)
 	value = models.IntegerField(default=0, help_text="Used for sorting; greater value -> higher on the list")
 	is_featured = models.BooleanField("feature on front page", default=False, help_text="If there are too many or too few servers marked as featured, 'value' will be the deciding factor")
@@ -224,15 +218,16 @@ class Setting(models.Model):
 	value = models.TextField(blank=True)
 	
 	def __str__(self):
+		if self.verbose_key:
+			return self.verbose_key
 		return self.key
 	
-	
-	'''
-		Fetches value for the specified key
-		Returns default if either key doesn't exist or has empty value
-	'''
 	@staticmethod
 	def fetch_setting(key, default=""):
+		'''
+		Fetches value for the specified key
+		Returns default if either key doesn't exist or has empty value
+		'''
 		try:
 			setting = Setting.objects.get(key=key)
 		except Setting.DoesNotExist:
@@ -248,7 +243,9 @@ class Country(models.Model):
 	flag = models.FilePathField(path=settings.MEDIA_ROOT+"flags/", allow_files=True, blank=True, null=True)
 	
 	def flag_url(self):
-		return settings.MEDIA_URL+"flags/"+os.path.basename(self.flag)
+		if self.flag:
+			return settings.MEDIA_URL+"flags/"+os.path.basename(self.flag)
+		return ""
 	
 	def __str__(self):
 		return self.name

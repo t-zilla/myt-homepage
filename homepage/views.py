@@ -5,28 +5,30 @@ from myt_homepage.utils import merge_dicts
 from .models import Player, Rank, Game, Server, News, Setting, Country
 
 
-common_context = {
-	'latest_news': News.objects.latest(),
-	'new_members': Player.objects.new_members(),
-	'links': Setting.fetch_setting('links', '[links]'),
-	'footer': Setting.fetch_setting('footer', '[footer]'),
-}
+def get_common_context():
+	return {
+		'latest_news': News.objects.latest(),
+		'new_members': Player.objects.new_members(),
+		'links': Setting.fetch_setting('links', '[links]'),
+		'footer': Setting.fetch_setting('footer', '[footer]'),
+	}
 
 
 def index(request):
-	return render(request, 'homepage/index.html', merge_dicts(common_context, {
-		'featured_servers': Server.objects.featured(),
+	return render(request, 'homepage/index.html', merge_dicts(get_common_context(), {
+		'featured_servers': Server.objects.featured()[:3],
 		'social_media': Setting.fetch_setting('social_media', '[social_media]'),
 		'support': Setting.fetch_setting('support', '[support]'),
 		'jumbo_header': Setting.fetch_setting('jumbo_header', '[jumbo_header]'),
 		'jumbo_subheader': Setting.fetch_setting('jumbo_subheader', '[jumbo_subheader]'),
 		'greeting': Setting.fetch_setting('greeting', '[greeting]'),
+		'latest_news': News.objects.latest(3),
 	}))
 
 
 def members(request):
-	return render(request, 'homepage/members.html', merge_dicts(common_context, {
-		'members': Player.objects.members(),	
+	return render(request, 'homepage/members.html', merge_dicts(get_common_context(), {
+		'members': Player.objects.members().order_by("-rank__value", "-date_joined"),	
 	}))
 
 	
@@ -36,7 +38,7 @@ def member(request, pk):
 	except Player.DoesNotExist:
 		raise Http404
 
-	return render(request, 'homepage/member.html', merge_dicts(common_context, {
+	return render(request, 'homepage/member.html', merge_dicts(get_common_context(), {
 		'player': player,
 	}))
 
@@ -65,7 +67,7 @@ def server(request, pk):
 		
 	'''
 
-	return render(request, 'homepage/servers.html', merge_dicts(common_context, {
+	return render(request, 'homepage/servers.html', merge_dicts(get_common_context(), {
 		'servers': servers,
 		'viewed_server': viewed_server,
 	}))
@@ -80,7 +82,7 @@ def news(request, pk):
 	if not request.user.is_authenticated and news.is_draft:
 		raise Http404
 		
-	return render(request, 'homepage/news.html', merge_dicts(common_context, {
+	return render(request, 'homepage/news.html', merge_dicts(get_common_context(), {
 		'news': news,
 	}))
 	
@@ -90,7 +92,7 @@ def flat_page(request, page_key, page_title):
 	if not page_content:
 		raise Http404
 	
-	return render(request, 'homepage/flat_page.html', merge_dicts(common_context, {
+	return render(request, 'homepage/flat_page.html', merge_dicts(get_common_context(), {
 		'page_title': page_title,
 		'page_content': page_content,
 	}))
