@@ -10,20 +10,38 @@ from myt_homepage import settings
 
 
 class PlayerManager(models.Manager):
+	'''
+	Manages retrieval of :model:'homepage.Player' instances.
+	'''
 	def get_queryset(self, *args, **kwargs):
+		'''
+		Retrieves :model:'homepage.Player' instances ordered alphabetically by username.
+		'''
 		return super(PlayerManager, self).get_queryset().order_by("user__username")
 	
 	def members(self):
+		'''
+		Retrieves :model:'homepage.Player' instances who are clan members.
+		'''
 		return self.get_queryset().filter(is_member=True)
 		
 	def ex_members(self):
+		'''
+		Retrieves :model:'homepage.Player' instances who left the clan and are no longer members.
+		'''
 		return self.get_queryset().filter(is_member=False, date_left__isnull=False)
 		
 	def new_members(self, period=30):
+		'''
+		Retrieves :model:'homepage.Player' instances who joined the clan within the period specified in days.
+		'''
 		return self.members().filter(date_joined__gte=timezone.now()-datetime.timedelta(days=period))
 	
 	
 class Player(models.Model):
+	'''
+	Stores a single player.
+	'''
 	MALE = 1
 	FEMALE = 2
 	GENDER_CHOICES = (
@@ -49,15 +67,24 @@ class Player(models.Model):
 	objects = PlayerManager()
 	
 	def username(self):
+		'''
+		Returns username as in :model:'auth.User'.
+		'''
 		return self.user.username
 		
 	def member_name(self):
+		'''
+		Returns username as in :model:'auth.User' with clan tag prepended if appropriate.
+		'''
 		if not self.is_member:
 			return self.user.username
 		else:
 			return "|MYT|" + self.user.username
 	
 	def full_member_name(self):
+		'''
+		Returns username as in :model:'auth.User' with clan tag prepended and rank suffix appended if appropriate.
+		'''
 		if not self.is_member or not self.rank:
 			return self.user.username
 		elif self.rank.suffix:
@@ -66,9 +93,15 @@ class Player(models.Model):
 			return "|MYT|" + self.user.username
 		
 	def email(self):
+		'''
+		Returns e-mail address as in :model:'auth.User'.
+		'''
 		return self.user.email
 		
 	def age(self):
+		'''
+		Returns age in years.
+		'''
 		today = datetime.date.today()
 		if self.birthday:
 			return today.year - self.birthday.year - ((today.month, today.day) < (self.birthday.month, self.birthday.day))
@@ -78,6 +111,12 @@ class Player(models.Model):
 		return self.full_member_name()
 		
 	def clean(self):
+		'''
+		Validates integrity of the instance.
+		
+		**Raises**
+		ValidationError
+		'''
 		if self.is_member:
 			if not self.rank:
 				raise ValidationError("Clan member must have a rank.")
@@ -98,11 +137,20 @@ class Player(models.Model):
 
 
 class RankManager(models.Manager):
+	'''
+	Manages retrieval of :model:'homepage.Rank' instances.
+	'''
 	def get_queryset(self, *args, **kwargs):
+		'''
+		Retrieves :model:'homepage.Rank' instances ordered by value (most significant to least significant).
+		'''
 		return super(RankManager, self).get_queryset().order_by("-value", "name")
 		
 
 class Rank(models.Model):
+	'''
+	Stores a single rank which can be assigned to :model:'homepage.Player' instances.
+	'''
 	name = models.CharField(max_length=30)
 	suffix = models.CharField(max_length=10, null=True, blank=True, help_text="Suffix added to member's name, for example: >SrM<")
 	value = models.IntegerField(help_text="Used for sorting; greater value -> rank displayed higher")
@@ -113,19 +161,37 @@ class Rank(models.Model):
 		return self.name
 		
 	def clean(self):
+		'''
+		Validates integrity of the instance.
+		
+		**Raises**
+		ValidationError
+		'''
 		if self.suffix and not re.match(r'>.+<', self.suffix):
 			raise ValidationError("Suffix must follow the format: >Example<")
 
 
 class GameManager(models.Manager):
+	'''
+	Manages retrieval of :model:'homepage.Game' instances.
+	'''
 	def get_queryset(self, *args, **kwargs):
+		'''
+		Retrieves :model:'homepage.Game' instances ordered alphabetically by title.
+		'''
 		return super(GameManager, self).get_queryset().order_by("title")
 		
 	def supported(self):
+		'''
+		Retrieves :model:'homepage.Game' instances that are currently supported by the clan.
+		'''
 		return self.get_queryset().filter(is_supported=True)
 	
 		
 class Game(models.Model):
+	'''
+	Stores a single game release. Typically, versions of the same game that are incompatible with each other in multiplayer are represented as separate instances.
+	'''
 	title = models.CharField(max_length=20, help_text="Game title including its version")
 	icon = models.FilePathField(path=settings.MEDIA_ROOT+"game_icons/", allow_files=True, blank=True, null=True)
 	is_supported = models.BooleanField(default=True, help_text="Is this game currently supported")
@@ -133,6 +199,9 @@ class Game(models.Model):
 	objects = GameManager()
 	
 	def icon_url(self):
+		'''
+		Returns URL of the icon.
+		'''
 		if self.icon:
 			return settings.MEDIA_URL+"game_icons/"+os.path.basename(self.icon)
 		return ""
@@ -142,17 +211,32 @@ class Game(models.Model):
 		
 
 class ServerManager(models.Manager):
+	'''
+	Manages retrieval of :model:'homepage.Server' instances.
+	'''
 	def get_queryset(self, *args, **kwargs):
+		'''
+		Retrieves :model:'homepage.Server' instances ordered by their significance (value) and then alphabetically by game title and name.
+		'''
 		return super(ServerManager, self).get_queryset().order_by("-value", "game", "name")
 		
 	def active(self):
+		'''
+		Retrieves :model:'homepage.Server' instances that are currently active.
+		'''
 		return self.get_queryset().filter(is_active=True)
 		
 	def featured(self):
+		'''
+		Retrieves :model:'homepage.Server' instances that are currently active with (ordering) priority to featured servers.
+		'''
 		return self.active().order_by("-is_featured", "-value", "game", "name")
 	
 	
 class Server(models.Model):
+	'''
+	Stores a single game server, related to a :model:'homepage.Game' instance.
+	'''
 	name = models.CharField(max_length=50)
 	ip = models.GenericIPAddressField("IP address")
 	game_port = models.PositiveIntegerField()
@@ -174,27 +258,48 @@ class Server(models.Model):
 		return self.name + " @ " + self.ip + ":" + str(self.game_port)
 		
 	def clean(self):
+		'''
+		Validates integrity of the instance.
+		
+		**Raises**
+		ValidationError
+		'''
 		if not 1 <= self.game_port <= 65535:
 			raise ValidationError("Port must be between 1 and 65535.")
 		'''
 		
-			TODO: Validate query settings
-			
+		TODO: Validate query settings
+		
 		'''
 		
 
 class NewsManager(models.Manager):
+	'''
+	Manages retrieval of :model:'homepage.News' instances.
+	'''
 	def get_queryset(self, *args, **kwargs):
+		'''
+		Retrieves :model:'homepage.News' instances ordered by date written with (ordering) priority to news marked as sticky.
+		'''
 		return super(NewsManager, self).get_queryset().order_by("-is_sticky", "-date_written")
 		
 	def public(self):
+		'''
+		Retrieves :model:'homepage.News' instances which are not drafts.
+		'''
 		return self.get_queryset().filter(is_draft=False)
 		
 	def latest(self, count=5):
+		'''
+		Retrieves latest :model:'homepage.News' instances which are not drafts.
+		'''
 		return self.public()[:count]
 
 		
 class News(models.Model):
+	'''
+	Stores a single news story.
+	'''
 	title = models.CharField(max_length=150)
 	body = models.TextField()
 	date_written = models.DateTimeField(auto_now_add=True)
@@ -205,13 +310,16 @@ class News(models.Model):
 	objects = NewsManager()
 	
 	def __str__(self):
-		return self.title if not self.is_draft else "[Draft] " + self.title
+		return self.title if not self.is_draft else "[Draft] {}".format(self.title)
 		
 	class Meta:
 		verbose_name_plural = "news"
 
 		
 class Setting(models.Model):
+	'''
+	Stores a single key-value pair used for configuration.
+	'''
 	key = models.CharField(primary_key=True, max_length=50)
 	verbose_key = models.CharField("setting", max_length=50, blank=True, null=True)
 	hints = models.TextField(blank=True, null=True)
@@ -225,8 +333,8 @@ class Setting(models.Model):
 	@staticmethod
 	def fetch_setting(key, default=""):
 		'''
-		Fetches value for the specified key
-		Returns default if either key doesn't exist or has empty value
+		Fetches value for the specified key.
+		Returns default if the key either doesn't exist or has empty value.
 		'''
 		try:
 			setting = Setting.objects.get(key=key)
@@ -239,10 +347,16 @@ class Setting(models.Model):
 		
 
 class Country(models.Model):
+	'''
+	Stores a single country.
+	'''
 	name = models.CharField(max_length=20)
 	flag = models.FilePathField(path=settings.MEDIA_ROOT+"flags/", allow_files=True, blank=True, null=True)
 	
 	def flag_url(self):
+		'''
+		Returns URL of the flag.
+		'''
 		if self.flag:
 			return settings.MEDIA_URL+"flags/"+os.path.basename(self.flag)
 		return ""

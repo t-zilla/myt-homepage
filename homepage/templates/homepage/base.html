@@ -34,9 +34,9 @@
 					</div>
 					<ul class="nav navbar-nav">
 						<li class="{% if request.path == '/' %}active{% endif %}"><a href="{% url 'homepage:index' %}">Home</a></li>
-						<li><a href="{% url 'homepage:forum' %}" target="_blank">Forum</a></li>
 						<li class="{% if '/members' in request.path %}active{% endif %}"><a href="{% url 'homepage:members' %}">Members</a></li>
 						<li class="{% if '/servers' in request.path %}active{% endif %}"><a href="{% url 'homepage:servers' %}">Servers</a></li>
+						<li><a href="{% url 'homepage:forum' %}" target="_blank">Forum</a></li>
 						<li><a href="{% url 'homepage:discord' %}" target="_blank">Discord</a></li>
 					</ul>
 					<ul class="nav navbar-nav navbar-right">
@@ -69,6 +69,11 @@
 		
 		<script src="{% static 'js/jquery.js' %}"></script>
 		<script src="{% static 'js/bootstrap.min.js' %}"></script>
+		<script>
+			$(document).ready(function(){
+				$('[data-toggle="tooltip"]').tooltip();
+			});
+		</script>
 
 	</body>
 	

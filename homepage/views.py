@@ -54,22 +54,24 @@ def servers(request):
 def server(request, pk):
 	servers = Server.objects.active()
 	try:
-		viewed_server = Server.objects.get(pk=pk)
+		current_server = Server.objects.get(pk=pk)
 	except Server.DoesNotExist:
-		viewed_server = {}
+		current_server = None
 	
-	if not request.user.is_authenticated and not viewed_server.is_active:
-		viewed_server = {}
+	if not request.user.is_authenticated and not current_server.is_active:
+		current_server = None
 		
-	'''
+	if current_server.query_enabled:
+		'''
 
-		TODO: Implement server status
-		
-	'''
+			TODO: Implement server status
+			
+		'''
+		pass
 
 	return render(request, 'homepage/servers.html', merge_dicts(get_common_context(), {
 		'servers': servers,
-		'viewed_server': viewed_server,
+		'current_server': current_server,
 	}))
 	
 

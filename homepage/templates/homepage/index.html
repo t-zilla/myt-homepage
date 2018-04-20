@@ -43,7 +43,7 @@
 				<div class="row">
 					{% for server in featured_servers %}
 					<div class="col-sm-4">
-						<h4 style="white-space: nowrap; overflow: hidden;"><a href="{% url 'homepage:server' server.pk %}">{{server.name}}</a></h4>
+						<h4 {% if server.name|length > 20 %}data-toggle="tooltip"{% endif %} title="{{server.name}}" style="white-space: nowrap; overflow: hidden;"><a href="{% url 'homepage:server' server.pk %}">{{server.name}}</a></h4>
 						<ul>
 							<li>
 								{% include 'homepage/includes/game_icon.html' with game=server.game %} {{server.game.title}}
